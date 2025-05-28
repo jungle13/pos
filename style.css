@@ -164,3 +164,12 @@ footer {
   display: block;
   margin-top: 2px;
 }
+
+
+#product-area .h5 { /* Para el mensaje "Por favor seleccione..." */
+    font-weight: 300;
+}
+
+.payment-method-btn i {
+    vertical-align: middle;
+}
