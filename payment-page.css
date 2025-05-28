@@ -1,0 +1,115 @@
+/* src/payment-page.css o como lo nombres */
+
+/* Estilos para la columna principal de pago */
+.payment-main-column {
+    /* background-color: #f8f9fa; /* Un fondo ligeramente diferente si se desea */
+    /* padding: 2rem; */
+    /* border-right: 1px solid #dee2e6; */ /* Separador opcional */
+}
+
+.payment-methods-section {
+    margin-bottom: 2rem; /* Espacio antes de la sección de total y pago */
+}
+
+.payment-confirmation-section {
+    border-top: 1px solid #e9ecef; /* Separador sutil */
+    padding-top: 1.5rem;
+}
+
+.total-display .total-label {
+    font-size: 1.1rem; /* Tamaño para la etiqueta "TOTAL A PAGAR" */
+}
+
+.total-amount-large {
+    font-size: 2.8rem;  /* Tamaño de fuente grande para el monto */
+    font-weight: bold;
+    color: #198754; /* Verde éxito de Bootstrap, o el color que prefieras */
+    line-height: 1.2;
+}
+
+/* Estilos para la columna de resumen de orden */
+.payment-summary-column {
+    /* background-color: #ffffff; */
+    /* padding: 1.5rem; */
+}
+
+#payment-order-summary-area .list-group-item {
+    border-left: 0;
+    border-right: 0;
+}
+
+#payment-order-summary-area .list-group-item:first-child {
+    border-top: 0;
+}
+
+#payment-order-summary-area .list-group-item:last-child {
+    border-bottom: 0;
+}
+
+.order-subtotal-section {
+    margin-top: 1rem;
+    border-top: 1px dashed #ced4da;
+    padding-top: 1rem;
+}
+
+/* Media Query para asegurar que en móvil el contenido de pago no se comprima demasiado */
+@media (max-width: 767.98px) {
+    .payment-main-column {
+        border-right: none;
+        padding-bottom: 2rem; /* Espacio antes del resumen en móvil si se apilan */
+    }
+    .payment-summary-column {
+        margin-top: 2rem;
+        border-top: 1px solid #dee2e6;
+        padding-top: 1.5rem;
+    }
+    .total-amount-large {
+        font-size: 2.2rem; 
+    }
+    .btn-success.w-75 { /* Hacer el botón un poco más grande en móvil si es necesario */
+        width: 90% !important; 
+    }
+}
+
+/* payment-page.css */
+
+/* ... (estilos anteriores) ... */
+
+.payment-method-selection-column {
+    background-color: #f8f9fa; /* Un fondo suave si se desea para esta columna */
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item {
+    margin-bottom: 0.75rem; /* Espacio entre opciones de pago */
+    border-radius: 0.375rem; /* Bordes redondeados */
+    border-width: 1px; /* Borde más sutil si se quiere */
+    transition: all 0.2s ease-in-out;
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item.active { /* Estilo para la opción seleccionada */
+    background-color: #0d6efd; /* Azul primario de Bootstrap */
+    border-color: #0a58ca;
+    color: white;
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item.active .text-muted {
+    color: #e0e0e0 !important; /* Para que el texto secundario también sea legible */
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item h5 i {
+    font-size: 1.2em; /* Iconos un poco más grandes */
+}
+
+#payment-order-summary-compact-area {
+    font-size: 0.9rem;
+}
+
+#payment-order-summary-compact-area .fw-bold {
+    color: #343a40;
+}

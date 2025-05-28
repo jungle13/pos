@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerSelectorBtn = document.getElementById('customer-selector-btn');
     const scanToggleButton = document.getElementById('btn-toggle-scan');
     const scanToggleButtonText = scanToggleButton.querySelector('.button-text');
+    const btnFinalizarPago = document.getElementById('btn-finalizar-pago');
 
     // --- LÓGICA DE CLIENTES ---
     function renderizarClientes() {
@@ -135,6 +136,24 @@ if (scanToggleButton) {
 
             console.log('Modo escaneo: DESACTIVADO - Área de productos restaurada.');
         }
+    });
+}
+
+if (btnFinalizarPago) {
+    btnFinalizarPago.addEventListener('click', () => {
+        // OPCIONAL: Antes de redirigir, puedes guardar la información del carrito
+        // y el cliente seleccionado en localStorage o sessionStorage para que 
+        // la página payment.html pueda recuperarla.
+        // Ejemplo guardando el carrito y el total:
+        const datosOrden = {
+            items: carrito, // Asumiendo que 'carrito' es tu array de ítems del carrito
+            total: parseFloat(totalPriceEl.textContent.replace(/[$.]/g, '').replace(',', '.')), // Obtener el total numérico
+            clienteId: clienteSeleccionadoId // Asumiendo que tienes esta variable
+        };
+        localStorage.setItem('ordenParaPago', JSON.stringify(datosOrden));
+
+        // Redirigir a la página de pago
+        window.location.href = 'payment.html';
     });
 }
 
