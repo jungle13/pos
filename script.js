@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let clienteSeleccionadoId = null;
     let modoTeclado = 'cantidad';
     let bufferTeclado = '';
+    let scanningActive = false; // NUEVO: Estado para el botón de escaneo
 
     // --- SELECTORES DE ELEMENTOS DEL DOM ---
     const productArea = document.getElementById('product-area');
@@ -19,6 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const customerModal = new bootstrap.Modal(document.getElementById('customer-select-modal'));
     const modalClientList = document.getElementById('modal-client-list');
     const customerSelectorBtn = document.getElementById('customer-selector-btn');
+    const scanToggleButton = document.getElementById('btn-toggle-scan');
+    const scanToggleButtonText = scanToggleButton.querySelector('.button-text');
 
     // --- LÓGICA DE CLIENTES ---
     function renderizarClientes() {
@@ -104,6 +107,36 @@ document.addEventListener('DOMContentLoaded', () => {
         renderizarClientes();
         actualizarUICompleta();
     }
+
+    // --- NUEVO: Event Listener para el botón Iniciar/Parar Escaneo ---
+if (scanToggleButton) {
+    scanToggleButton.addEventListener('click', () => {
+        scanningActive = !scanningActive; // Invierte el estado
+
+        if (scanningActive) {
+            scanToggleButtonText.textContent = 'Parar';
+            scanToggleButton.classList.remove('btn-outline-success');
+            scanToggleButton.classList.add('btn-danger');
+
+            // --- LÓGICA AÑADIDA ---
+            renderizarProductos([]); // Pasa un array vacío para limpiar el área de productos
+            // No es necesario actualizar contadores aquí ya que no hay productos visibles.
+
+            console.log('Modo escaneo: ACTIVADO - Área de productos limpia.');
+            // Futuro: Aquí podrías enfocar un campo de texto para el escáner si lo tuvieras.
+        } else {
+            scanToggleButtonText.textContent = 'Iniciar';
+            scanToggleButton.classList.remove('btn-danger');
+            scanToggleButton.classList.add('btn-outline-success');
+
+            // --- LÓGICA AÑADIDA ---
+            renderizarProductos(productos); // Vuelve a cargar todos los productos del arreglo global
+            actualizarContadoresProductos(); // Actualiza los contadores en las tarjetas restauradas
+
+            console.log('Modo escaneo: DESACTIVADO - Área de productos restaurada.');
+        }
+    });
+}
 
     // ... (el resto de los event listeners no cambia)
     const searchInput = document.getElementById('product-search-input');
