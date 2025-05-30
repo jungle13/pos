@@ -199,3 +199,38 @@ footer {
     color: #dc3545; /* Rojo para indicar "Faltante" */
 }
 /* El color del monto ya se maneja con text-success y text-danger en el JS */
+
+.payment-summary-column {
+    display: flex;
+    flex-direction: column;
+    /* Es importante que esta columna tenga una altura definida o pueda crecer
+       para que mt-auto en .order-totals-summary funcione.
+       Si el modal tiene un scrollable body, esta columna se adaptará. */
+    /* Podrías necesitar asegurar una altura mínima si el contenido es muy poco,
+       o asegurar que el modal-body y el row interno tengan altura suficiente.
+       Por ejemplo, si el .modal-body tiene altura completa: */
+}
+
+#modal-payment-content-row {
+    /* Si el modal-body es scrollable, esta fila necesita poder ocupar altura */
+    /* Esto puede depender de la altura general del .modal-dialog y .modal-content */
+}
+
+/* Estilos para el header del resumen si lo haces sticky */
+.payment-summary-header {
+    /* background-color: #f8f9fa; /* O el color de fondo de tu .payment-summary-column */
+    /* z-index: 10; /* Para asegurar que esté por encima de la lista scrolleable */
+}
+
+/* El div que contiene la lista de items */
+#modal-order-summary-items {
+    flex-grow: 1; /* Hará que esta sección ocupe el espacio disponible */
+    overflow-y: auto; /* Permitirá el scroll solo para los ítems */
+    padding: 1rem 0; /* Espacio interno para la lista */
+}
+
+/* La sección de totales */
+.order-totals-summary {
+    flex-shrink: 0; /* Evita que esta sección se encoja */
+    /* El padding-top: 1.5rem; (pt-3) y border-top ya están en el HTML con Bootstrap */
+}
