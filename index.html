@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="payment-page.css">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -122,6 +123,101 @@
         </div>
       </div>
     </div>
+
+    <div class="modal fade" id="paymentProcessModal" tabindex="-1" aria-labelledby="paymentProcessModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable"> 
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="paymentProcessModalLabel">Procesar Pago de Orden</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0"> 
+                <div class="container-fluid"> 
+                    <div class="row" id="modal-payment-content-row">
+
+                        
+                        <div class="col-md-7 d-flex flex-column payment-main-column p-4">
+                            
+                            <div class="payment-processing-area flex-grow-1"> 
+                                <h3 class="mb-3">Confirmar y Pagar</h3>
+                                
+                                
+                                <div class="payment-total-display-container mb-4">
+                                    <p class="payment-total-label text-muted mb-1">TOTAL A PAGAR:</p>
+                                    
+                                    <div id="modal-payment-total-price" class="payment-total-amount">$0.00</div> 
+                                </div>
+
+                                <div id="modal-payment-methods-selection" class="mb-4"> 
+                                    <h5 class="mb-3">Seleccione Método de Pago:</h5>
+                                    <div class="btn-group w-100" role="group" aria-label="Métodos de pago">
+                                        <input type="radio" class="btn-check" name="modalPaymentMethod" id="modal-pay-cash" autocomplete="off" checked>
+                                        <label class="btn btn-outline-primary payment-method-btn" for="modal-pay-cash"><i class="bi bi-cash-coin me-2"></i>Efectivo</label>
+
+                                        <input type="radio" class="btn-check" name="modalPaymentMethod" id="modal-pay-card" autocomplete="off">
+                                        <label class="btn btn-outline-primary payment-method-btn" for="modal-pay-card"><i class="bi bi-credit-card-2-front-fill me-2"></i>Tarjeta</label>
+
+                                        <input type="radio" class="btn-check" name="modalPaymentMethod" id="modal-pay-transfer" autocomplete="off">
+                                        <label class="btn btn-outline-primary payment-method-btn" for="modal-pay-transfer"><i class="bi bi-bank me-2"></i>Transferencia</label>
+                                    </div>
+                                </div>
+
+                                
+                                <div id="modal-payment-details-area" class="mb-4" style="min-height: 100px;">
+                                    <p class="text-muted"><em>Detalles adicionales para el pago aparecerán aquí...</em></p>
+                                </div>
+                            </div>
+
+                            
+                            <div class="mt-auto w-100">
+                                <button class="btn btn-success w-100 py-3 fw-bold fs-5 mb-2" id="btn-modal-confirmar-pago">
+                                    <i class="bi bi-check-circle-fill me-2"></i>Confirmar y Finalizar Pago
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary w-100 py-2" data-bs-dismiss="modal">Volver al Pedido</button>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-5 d-flex flex-column payment-summary-column p-4 bg-light">
+                            <div class="sticky-top py-3">
+                                <h4 class="mb-3">Resumen de la Orden</h4>
+                                
+                                <div id="modal-order-summary-items" class="mb-3" style="max-height: 45vh; overflow-y: auto;">
+                                    <p class="text-muted small p-3">Cargando resumen de la orden...</p>
+                                </div>
+                                <hr>
+                                <div class="order-totals-summary">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">Subtotal:</span>
+                                        
+                                        <span id="modal-payment-subtotal">$0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="text-muted">IVA (Estimado):</span>
+                                        
+                                        <span id="modal-payment-iva">$0.00</span>
+                                    </div>
+                                    <hr class="my-2">
+                                    <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+                                        <span>Total:</span>
+                                        
+                                        <span id="modal-payment-grand-total">$0.00</span>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+            
+             <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar Pago</button>,
+                <button type="button" class="btn btn-primary" id="btn-modal-confirmar-pago-footer">Confirmar Pago</button>
+            </div> 
+        </div>
+    </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="script.js"></script>

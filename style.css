@@ -173,3 +173,16 @@ footer {
 .payment-method-btn i {
     vertical-align: middle;
 }
+
+/* Estilos adicionales para destacar el total a pagar */
+        .total-a-pagar-grande {
+            font-size: 2.5rem; /* Tamaño de fuente grande */
+            font-weight: bold;
+            color: #28a745; /* Un color verde para destacar, puedes ajustarlo */
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center; /* Centrar el total */
+        }
+        .col-md-8.d-flex.flex-column {
+            justify-content: space-between; /* Para ayudar a posicionar el botón de pago abajo si hay poco contenido */
+        }
