@@ -6,9 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let clientes = [];
     let itemSeleccionadoId = null;
     let clienteSeleccionadoId = 'final'; // Cliente final por defecto
-    let modoTeclado = 'cantidad';
+    let modoTeclado = 'cantidad'; // Modos: 'cantidad', 'precio', 'pago-efectivo', 'pago-tarjeta', 'pago-transferencia'
     let bufferTeclado = '';
     let scanningActive = false;
+    let currentOrderTotal = 0; // Almacena el total de la orden actual que se está pagando
 
     // --- SELECTORES DE ELEMENTOS DEL DOM (PRINCIPALES) ---
     const productArea = document.getElementById('product-area');
@@ -17,40 +18,87 @@ document.addEventListener('DOMContentLoaded', () => {
     const keypadContainer = document.getElementById('keypad-container');
     const btnCantidad = document.getElementById('btn-cantidad');
     const btnPrecio = document.getElementById('btn-precio');
+    
     const customerSelectModalElement = document.getElementById('customer-select-modal');
     let customerModal = customerSelectModalElement ? new bootstrap.Modal(customerSelectModalElement) : null;
+    
     const modalClientList = document.getElementById('modal-client-list');
     const customerSelectorBtn = document.getElementById('customer-selector-btn');
     const scanToggleButton = document.getElementById('btn-toggle-scan');
     const scanToggleButtonText = scanToggleButton ? scanToggleButton.querySelector('.button-text') : null;
-    const btnFinalizarPagoOriginal = document.getElementById('btn-finalizar-pago'); // Botón Pagar en index.html
+    const btnFinalizarPagoOriginal = document.getElementById('btn-finalizar-pago');
 
     // --- SELECTORES PARA EL MODAL DE PAGO ---
     const paymentProcessModalEl = document.getElementById('paymentProcessModal');
     let paymentModalInstance = paymentProcessModalEl ? new bootstrap.Modal(paymentProcessModalEl) : null;
-    const modalTotalPriceEl = document.getElementById('modal-payment-total-price');
+    
+    const modalOrderTotalEl = document.getElementById('modal-payment-total-price'); // Total de la orden en el modal
     const modalOrderSummaryItemsEl = document.getElementById('modal-order-summary-items');
     const modalPaymentSubtotalEl = document.getElementById('modal-payment-subtotal');
     const modalPaymentIvaEl = document.getElementById('modal-payment-iva');
-    const modalPaymentGrandTotalEl = document.getElementById('modal-payment-grand-total');
+    const modalPaymentGrandTotalEl = document.getElementById('modal-payment-grand-total'); // Total en el resumen
     const btnModalConfirmarPago = document.getElementById('btn-modal-confirmar-pago');
-    const modalPaymentMethodRadios = document.querySelectorAll('input[name="modalPaymentMethod"]');
-    const modalPaymentDetailsArea = document.getElementById('modal-payment-details-area');
 
+    // Selectores para los campos de monto de los métodos de pago
+    const paymentCashAmountInput = document.getElementById('payment-cash-amount');
+    const paymentCardAmountInput = document.getElementById('payment-card-amount');
+    const paymentTransferAmountInput = document.getElementById('payment-transfer-amount');
+    const paymentCashChangeEl = document.getElementById('payment-cash-change');
+    const paymentCoveredAmountEl = document.getElementById('payment-covered-amount');
+    const paymentRemainingAmountEl = document.getElementById('payment-remaining-amount');
+    const paymentRemainingLabelEl = document.getElementById('payment-remaining-label');
 
     // --- FUNCIONES AUXILIARES ---
     function formatearMoneda(valor) {
-        return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(valor);
+        return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(valor);
     }
 
-    // --- FUNCIÓN CLAVE: CARGAR DATOS EN EL MODAL DE PAGO ---
-    function cargarDatosOrdenEnModal() {
-        console.log("Ejecutando cargarDatosOrdenEnModal..."); // Para depurar
+    // --- LÓGICA DE PAGOS EN MODAL ---
+    function actualizarCalculosDePago() {
+        if (!paymentCashAmountInput || !paymentCardAmountInput || !paymentTransferAmountInput || 
+            !paymentCashChangeEl || !modalOrderTotalEl || !paymentCoveredAmountEl || 
+            !paymentRemainingAmountEl || !paymentRemainingLabelEl) {
+            console.warn("Faltan elementos del DOM para actualizar cálculos de pago.");
+            return;
+        }
 
-        if (!modalOrderSummaryItemsEl || !modalTotalPriceEl || !modalPaymentSubtotalEl || !modalPaymentIvaEl || !modalPaymentGrandTotalEl) {
+        const cashAmount = parseFloat(paymentCashAmountInput.value) || 0;
+        const cardAmount = parseFloat(paymentCardAmountInput.value) || 0;
+        const transferAmount = parseFloat(paymentTransferAmountInput.value) || 0;
+
+        const totalPaid = cashAmount + cardAmount + transferAmount;
+        let remainingOrChange = currentOrderTotal - totalPaid;
+
+        paymentCoveredAmountEl.textContent = formatearMoneda(totalPaid);
+
+        if (remainingOrChange > 0.01) { // Se usa un pequeño umbral para problemas de flotantes
+            paymentRemainingAmountEl.textContent = formatearMoneda(remainingOrChange);
+            paymentRemainingAmountEl.classList.remove('text-success');
+            paymentRemainingAmountEl.classList.add('text-danger');
+            paymentRemainingLabelEl.textContent = "Faltante por Pagar:";
+        } else if (remainingOrChange < -0.01) {
+            paymentRemainingAmountEl.textContent = formatearMoneda(Math.abs(remainingOrChange));
+            paymentRemainingAmountEl.classList.remove('text-danger');
+            paymentRemainingAmountEl.classList.add('text-success');
+            paymentRemainingLabelEl.textContent = "Cambio a Entregar:";
+        } else {
+            paymentRemainingAmountEl.textContent = formatearMoneda(0);
+            paymentRemainingAmountEl.classList.remove('text-danger', 'text-success');
+            paymentRemainingLabelEl.textContent = "Saldo:";
+        }
+        
+        // Cambio específico para efectivo
+        const cashChange = cashAmount - (currentOrderTotal - cardAmount - transferAmount);
+        paymentCashChangeEl.textContent = formatearMoneda(cashChange > 0 ? cashChange : 0);
+    }
+
+
+    function cargarDatosOrdenEnModal() {
+        console.log("Ejecutando cargarDatosOrdenEnModal..."); 
+
+        if (!modalOrderSummaryItemsEl || !modalOrderTotalEl || !modalPaymentSubtotalEl || !modalPaymentIvaEl || !modalPaymentGrandTotalEl) {
             console.error("Error: Elementos del DOM del modal de pago no encontrados. Verifica los IDs en tu HTML.");
-            // Mostrar $0 en todos los campos relevantes del modal si los elementos no se encuentran
-            if(modalTotalPriceEl) modalTotalPriceEl.textContent = formatearMoneda(0);
+            if(modalOrderTotalEl) modalOrderTotalEl.textContent = formatearMoneda(0);
             if(modalOrderSummaryItemsEl) modalOrderSummaryItemsEl.innerHTML = '<p class="text-muted small p-3">Error al cargar resumen.</p>';
             if(modalPaymentSubtotalEl) modalPaymentSubtotalEl.textContent = formatearMoneda(0);
             if(modalPaymentIvaEl) modalPaymentIvaEl.textContent = formatearMoneda(0);
@@ -64,36 +112,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const orden = JSON.parse(datosOrdenGuardada);
             console.log("Orden recuperada de localStorage para el modal:", orden);
 
-            let subtotalCalculado = 0;
-            modalOrderSummaryItemsEl.innerHTML = ''; // Limpiar el área de resumen de ítems
+            let subtotalCalculado = orden.total || 0; // El total guardado es el subtotal
+            modalOrderSummaryItemsEl.innerHTML = ''; 
 
             if (orden.items && orden.items.length > 0) {
                 const ul = document.createElement('ul');
                 ul.className = 'list-group list-group-flush';
-
                 orden.items.forEach(item => {
+                    // ... (código para crear y añadir 'li' al 'ul' como lo tenías)
                     const li = document.createElement('li');
                     li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                    
                     const itemDetailsDiv = document.createElement('div');
-                    
                     const itemName = document.createElement('div');
                     itemName.className = 'fw-bold';
                     itemName.textContent = `${item.nombre || 'Producto Desconocido'} (${item.presentacion || 'Und'})`;
-                    
                     const itemPriceQuant = document.createElement('small');
                     itemPriceQuant.className = 'text-muted';
                     itemPriceQuant.textContent = `${item.cantidad || 0} x ${formatearMoneda(item.precio || 0)}`;
-                    
                     itemDetailsDiv.appendChild(itemName);
                     itemDetailsDiv.appendChild(itemPriceQuant);
-
                     const itemTotalSpan = document.createElement('span');
                     itemTotalSpan.className = 'fw-medium';
-                    const itemTotal = (item.cantidad || 0) * (item.precio || 0);
-                    itemTotalSpan.textContent = formatearMoneda(itemTotal);
-                    subtotalCalculado += itemTotal;
-
+                    itemTotalSpan.textContent = formatearMoneda((item.cantidad || 0) * (item.precio || 0));
                     li.appendChild(itemDetailsDiv);
                     li.appendChild(itemTotalSpan);
                     ul.appendChild(li);
@@ -104,23 +144,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             modalPaymentSubtotalEl.textContent = formatearMoneda(subtotalCalculado);
-            const ivaEstimado = subtotalCalculado * 0.19; // Asumiendo 19% IVA, ajustar si es necesario para FAMATISA
+            const ivaEstimado = subtotalCalculado * 0.19; 
             modalPaymentIvaEl.textContent = formatearMoneda(ivaEstimado);
-            const granTotal = subtotalCalculado + ivaEstimado;
-            modalPaymentGrandTotalEl.textContent = formatearMoneda(granTotal);
-            modalTotalPriceEl.textContent = formatearMoneda(granTotal);
-
+            const granTotalConIVA = subtotalCalculado + ivaEstimado;
+            modalPaymentGrandTotalEl.textContent = formatearMoneda(granTotalConIVA);
+            
+            currentOrderTotal = granTotalConIVA; // Guardar el total CON IVA para cálculos de pago
+            modalOrderTotalEl.textContent = formatearMoneda(currentOrderTotal); // Total grande de la orden
+            
+            if(paymentCashAmountInput) paymentCashAmountInput.value = currentOrderTotal.toFixed(0);
+            if(paymentCardAmountInput) paymentCardAmountInput.value = '';
+            if(paymentTransferAmountInput) paymentTransferAmountInput.value = '';
+            
+            actualizarCalculosDePago();
         } else {
             console.warn("No se encontraron datos de 'ordenParaPago' en localStorage.");
-            modalTotalPriceEl.textContent = formatearMoneda(0);
-            modalOrderSummaryItemsEl.innerHTML = '<p class="text-muted small p-3">No hay datos de orden para mostrar.</p>';
-            modalPaymentSubtotalEl.textContent = formatearMoneda(0);
-            modalPaymentIvaEl.textContent = formatearMoneda(0);
-            modalPaymentGrandTotalEl.textContent = formatearMoneda(0);
+            currentOrderTotal = 0;
+            if(modalOrderTotalEl) modalOrderTotalEl.textContent = formatearMoneda(0);
+            if(modalOrderSummaryItemsEl) modalOrderSummaryItemsEl.innerHTML = '<p class="text-muted small p-3">No hay datos de orden para mostrar.</p>';
+            if(modalPaymentSubtotalEl) modalPaymentSubtotalEl.textContent = formatearMoneda(0);
+            if(modalPaymentIvaEl) modalPaymentIvaEl.textContent = formatearMoneda(0);
+            if(modalPaymentGrandTotalEl) modalPaymentGrandTotalEl.textContent = formatearMoneda(0);
+            actualizarCalculosDePago(); // Asegura que los campos de pago reflejen $0
         }
     }
 
-    // --- LÓGICA DE CLIENTES ---
+    // --- LÓGICA DE CLIENTES, PRODUCTOS, CARRITO, TECLADO (sin cambios mayores aquí, solo verificaciones) ---
     function renderizarClientes() {
         if (!modalClientList) { console.warn("Elemento modalClientList no encontrado"); return; }
         modalClientList.innerHTML = '';
@@ -164,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Cliente seleccionado para la orden: ${clienteSeleccionadoId}`);
     }
 
-    // --- OTRAS FUNCIONES (renderizarProductos, agregarAlCarrito, etc.) ---
     function renderizarProductos(listaDeProductos) {
         if (!productArea) {
             console.error("El elemento #product-area no fue encontrado en el DOM.");
@@ -212,11 +260,17 @@ document.addEventListener('DOMContentLoaded', () => {
         itemSeleccionadoId = productoId; 
         bufferTeclado = ''; 
         actualizarUICompleta(); 
+        // Al seleccionar un item del carrito, el modo teclado debe ser para cantidad o precio de ESE item.
+        // No directamente para los campos de pago del modal.
+        // Si el modal está abierto y se selecciona un item del carrito, quizás deberíamos cerrar el modo 'pago'.
+        if (modoTeclado.startsWith('pago-')) {
+             // Opcional: cambiarModoTeclado('cantidad'); // para evitar confusión
+        }
     }
 
     function deseleccionarItemCarrito() { 
         itemSeleccionadoId = null; 
-        if(cartArea){ // Asegurarse que cartArea existe
+        if(cartArea){
             const itemActivo = cartArea.querySelector('.cart-item-selected'); 
             if (itemActivo) { 
                 itemActivo.classList.remove('cart-item-selected'); 
@@ -228,37 +282,41 @@ document.addEventListener('DOMContentLoaded', () => {
         modoTeclado = nuevoModo; 
         bufferTeclado = ''; 
         actualizarEstadoBotonesModo(); 
+        // Si entramos a modo 'pago-efectivo', el itemSeleccionadoId no es relevante para el keypad
+        if (nuevoModo.startsWith('pago-')) {
+            itemSeleccionadoId = null; // Deseleccionar item del carrito si estamos en modo pago
+        }
     }
 
-    function procesarEntradaTeclado(valor) { 
-        if (itemSeleccionadoId === null && modoTeclado !== 'pago') return;
+    function procesarEntradaTeclado(valor) {
+        // Si estamos en un modo de pago, el itemSeleccionadoId no es relevante para el buffer.
+        // La lógica se manejará directamente en el input de pago.
+        if (modoTeclado.startsWith('pago-')) {
+            let targetInput;
+            if (modoTeclado === 'pago-efectivo' && paymentCashAmountInput) targetInput = paymentCashAmountInput;
+            else if (modoTeclado === 'pago-tarjeta' && paymentCardAmountInput) targetInput = paymentCardAmountInput;
+            else if (modoTeclado === 'pago-transferencia' && paymentTransferAmountInput) targetInput = paymentTransferAmountInput;
+            else return;
+
+            if (valor === 'borrar') {
+                targetInput.value = targetInput.value.slice(0, -1);
+            } else {
+                if (valor === '.' && targetInput.value.includes('.')) return; // Evitar múltiples puntos
+                targetInput.value += valor;
+            }
+            actualizarCalculosDePago(); // Actualizar siempre que cambie un input de pago
+            return;
+        }
+        
+        // Lógica original para cantidad/precio de items del carrito
+        if (itemSeleccionadoId === null) return; 
         if (valor === 'borrar') { 
             bufferTeclado = bufferTeclado.slice(0, -1); 
         } else { 
             if (valor === '.' && bufferTeclado.includes('.')) return; 
             bufferTeclado += valor; 
         } 
-        
-        if (modoTeclado === 'pago') {
-            const cashReceivedInput = document.getElementById('modal-cash-received');
-            if (cashReceivedInput) {
-                cashReceivedInput.value = bufferTeclado;
-                // Actualizar cambio
-                const recibido = parseFloat(bufferTeclado) || 0;
-                const datosOrdenGuardada = localStorage.getItem('ordenParaPago');
-                if(datosOrdenGuardada){
-                    const orden = JSON.parse(datosOrdenGuardada);
-                    let totalOrdenConIVA = orden.total; // Asumimos que orden.total ya tiene el IVA si aplica o es el subtotal
-                    // Si el total en localStorage es subtotal, calcular IVA aquí:
-                    // totalOrdenConIVA = orden.total * 1.19; // O tu lógica de IVA
-                    const cambio = recibido - totalOrdenConIVA;
-                    const cashChangeSpan = document.getElementById('modal-cash-change');
-                    if(cashChangeSpan) cashChangeSpan.textContent = formatearMoneda(cambio > 0 ? cambio : 0);
-                }
-            }
-        } else {
-            aplicarValorDelTeclado(); 
-        }
+        aplicarValorDelTeclado(); 
     }
 
     function aplicarValorDelTeclado() { 
@@ -287,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function actualizarVistaCarrito() { 
         if (!cartArea || !totalPriceEl) { console.warn("cartArea o totalPriceEl no encontrados"); return; }
         cartArea.innerHTML = ''; 
-        let total = 0; 
+        let totalCarrito = 0; 
         if (carrito.length === 0) { 
             cartArea.innerHTML = '<p class="text-muted text-center">El carrito está vacío.</p>'; 
             totalPriceEl.textContent = formatearMoneda(0); 
@@ -305,10 +363,10 @@ document.addEventListener('DOMContentLoaded', () => {
             li.innerHTML = `<div class="w-50"><h6 class="my-0 text-truncate">${item.nombre}</h6><small class="text-muted">${formatearMoneda(item.precio)} c/u</small></div><div class="text-center">x ${item.cantidad}</div><span class="fw-bold text-end w-25">${formatearMoneda(item.precio * item.cantidad)}</span>`; 
             li.addEventListener('click', (e) => { e.stopPropagation(); seleccionarItemCarrito(item.id); }); 
             listGroup.appendChild(li); 
-            total += item.precio * item.cantidad; 
+            totalCarrito += item.precio * item.cantidad; 
         }); 
         cartArea.appendChild(listGroup); 
-        totalPriceEl.textContent = formatearMoneda(total); 
+        totalPriceEl.textContent = formatearMoneda(totalCarrito); 
     }
 
     function actualizarContadoresProductos() { 
@@ -329,8 +387,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function actualizarEstadoBotonesModo() { 
         if (!btnCantidad || !btnPrecio) { console.warn("Botones de cantidad/precio no encontrados"); return; }
-        btnCantidad.classList.toggle('keypad-btn-active', modoTeclado === 'cantidad'); 
-        btnPrecio.classList.toggle('keypad-btn-active', modoTeclado === 'precio'); 
+        // Desactivar todos los botones de modo primero
+        btnCantidad.classList.remove('keypad-btn-active');
+        btnPrecio.classList.remove('keypad-btn-active');
+        // Activar el que corresponda (si no es un modo de pago)
+        if (modoTeclado === 'cantidad') {
+            btnCantidad.classList.add('keypad-btn-active');
+        } else if (modoTeclado === 'precio') {
+            btnPrecio.classList.add('keypad-btn-active');
+        }
+        // Si es un modo de pago, ningún botón de cantidad/precio debe estar activo
     }
     
     // --- INICIALIZACIÓN ---
@@ -364,6 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("Elementos para renderizar clientes no encontrados.");
         }
         actualizarUICompleta();
+        // Por defecto, el teclado numérico manejará la cantidad de ítems del carrito
+        cambiarModoTeclado('cantidad'); 
     }
 
     // --- ASIGNACIÓN DE EVENT LISTENERS ---
@@ -375,9 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("El carrito está vacío. Agrega productos antes de pagar.");
                 return;
             }
-            // Calcular el total basado en el estado actual del carrito (subtotal sin IVA)
             const subtotalOrden = carrito.reduce((acc, item) => acc + (item.precio * item.cantidad), 0);
-    
             const datosOrden = {
                 items: carrito.map(item => ({ 
                     nombre: item.nombre,
@@ -385,18 +451,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     precio: item.precio,
                     presentacion: item.presentacion || 'Und'
                 })),
-                // Guardamos el subtotal. El IVA y total final se calcularán en el modal.
-                total: subtotalOrden, 
+                total: subtotalOrden, // Este es el subtotal
                 clienteId: clienteSeleccionadoId 
             };
             localStorage.setItem('ordenParaPago', JSON.stringify(datosOrden));
-    
-            cargarDatosOrdenEnModal(); // Llama a la función para poblar el modal ANTES de mostrarlo
+            
+            cargarDatosOrdenEnModal(); 
     
             if (paymentModalInstance) {
                 paymentModalInstance.show();
+                // Al abrir el modal, enfocar el input de efectivo y activar modo teclado para efectivo
+                if(paymentCashAmountInput) {
+                    paymentCashAmountInput.focus();
+                    paymentCashAmountInput.select(); // Seleccionar el contenido para fácil reemplazo
+                }
+                cambiarModoTeclado('pago-efectivo'); // Cambiar modo teclado para efectivo
+                bufferTeclado = paymentCashAmountInput.value || ''; // Sincronizar buffer con el valor actual
             } else {
-                console.error("La instancia del modal de pago no se pudo crear. Revisa el ID 'paymentProcessModal' en tu HTML.");
+                console.error("La instancia del modal de pago no se pudo crear.");
             }
         });
     } else {
@@ -406,72 +478,77 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botón Confirmar Pago DENTRO DEL MODAL
     if (btnModalConfirmarPago) {
         btnModalConfirmarPago.addEventListener('click', () => {
+            const cashAmount = parseFloat(paymentCashAmountInput.value) || 0;
+            const cardAmount = parseFloat(paymentCardAmountInput.value) || 0;
+            const transferAmount = parseFloat(paymentTransferAmountInput.value) || 0;
+            const totalPagado = cashAmount + cardAmount + transferAmount;
+
+            // Redondear currentOrderTotal y totalPagado a 2 decimales para evitar problemas de precisión con flotantes
+            const roundedCurrentOrderTotal = parseFloat(currentOrderTotal.toFixed(2));
+            const roundedTotalPagado = parseFloat(totalPaid.toFixed(2));
+
+            if (roundedTotalPagado < roundedCurrentOrderTotal) {
+                alert("El monto pagado es inferior al total de la orden. Por favor, verifique los montos.");
+                return;
+            }
+            
             console.log("Procesando pago final...");
-            alert("¡Pago confirmado! (Simulación)");
-            // Lógica futura:
-            // 1. Obtener método de pago seleccionado
-            // 2. Obtener monto (si es efectivo, cuánto se pagó para calcular cambio)
-            // 3. Enviar datos de la orden y pago a un backend
-            // 4. Al confirmar el backend, limpiar carrito, localStorage
-            // 5. Cerrar modal y/o mostrar mensaje de éxito/imprimir recibo
-            // Ejemplo de limpieza:
-            // carrito = [];
-            // clienteSeleccionadoId = 'final'; 
-            // localStorage.removeItem('ordenParaPago');
-            // actualizarUICompleta(); 
-            // if (customerSelectorBtn) customerSelectorBtn.innerHTML = `<span><i class="bi bi-person-circle me-2"></i>Cliente Final</span>`;
-            // if (paymentModalInstance) paymentModalInstance.hide();
+            console.log("Total Orden:", formatearMoneda(currentOrderTotal));
+            console.log("Pagado con Efectivo:", formatearMoneda(cashAmount));
+            console.log("Pagado con Tarjeta:", formatearMoneda(cardAmount));
+            console.log("Pagado con Transferencia:", formatearMoneda(transferAmount));
+            console.log("Cambio:", paymentCashChangeEl ? paymentCashChangeEl.textContent : 'N/A');
+            
+            alert("¡Pago confirmado y registrado! (Simulación)");
+            
+            // Limpiar estado y UI para una nueva orden
+            carrito = [];
+            clienteSeleccionadoId = 'final'; 
+            itemSeleccionadoId = null;
+            bufferTeclado = '';
+            localStorage.removeItem('ordenParaPago');
+            actualizarUICompleta(); 
+            if (customerSelectorBtn) customerSelectorBtn.innerHTML = `<span><i class="bi bi-person-circle me-2"></i>Cliente Final</span>`;
+            if (paymentModalInstance) paymentModalInstance.hide();
+            cambiarModoTeclado('cantidad'); // Volver al modo teclado por defecto
         });
     } else {
         console.warn("Botón #btn-modal-confirmar-pago no encontrado.");
     }
 
-    // Selección de Método de Pago en el Modal
-    if (modalPaymentMethodRadios.length > 0 && modalPaymentDetailsArea) {
-        modalPaymentMethodRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.checked) {
-                    console.log("Método de pago seleccionado en modal:", this.id);
-                    if (this.id === 'modal-pay-cash') {
-                        modoTeclado = 'pago'; 
-                        bufferTeclado = ''; 
-                        modalPaymentDetailsArea.innerHTML = `
-                            <div class="mb-3">
-                                <label for="modal-cash-received" class="form-label">Efectivo Recibido:</label>
-                                <input type="text" class="form-control form-control-lg" id="modal-cash-received" placeholder="0" readonly>
-                            </div>
-                            <div class="mb-3 fs-5">
-                                Cambio: <span id="modal-cash-change" class="fw-bold">${formatearMoneda(0)}</span>
-                            </div>
-                        `;
-                         // Para que el teclado numérico del POS actualice el campo "Efectivo Recibido"
-                        const cashReceivedInput = document.getElementById('modal-cash-received');
-                        if(cashReceivedInput) {
-                            // No necesita un event listener 'input' si el keypad actualiza el buffer
-                            // y el buffer actualiza este campo.
-                        }
+    // Listeners para los inputs de métodos de pago en el modal
+    [paymentCashAmountInput, paymentCardAmountInput, paymentTransferAmountInput].forEach(input => {
+        if (input) {
+            input.addEventListener('input', actualizarCalculosDePago); // Actualiza cálculos al escribir directamente
+            input.addEventListener('focus', function() {
+                // Cambiar modo de teclado al método correspondiente
+                modoTeclado = `pago-${this.dataset.method}`;
+                bufferTeclado = this.value; // Sincronizar buffer con el valor actual del input
+                actualizarEstadoBotonesModo(); // Para deseleccionar botones Cantidad/Precio
 
-                    } else if (this.id === 'modal-pay-card') {
-                        modoTeclado = 'cantidad'; // Revertir modo teclado a default
-                        modalPaymentDetailsArea.innerHTML = '<p class="text-info">Procesamiento de tarjeta no implementado en este prototipo.</p>';
-                    } else if (this.id === 'modal-pay-transfer') {
-                        modoTeclado = 'cantidad'; // Revertir modo teclado
-                        modalPaymentDetailsArea.innerHTML = '<p class="text-info">Mostrar información para transferencia (Nequi, Daviplata, etc.).</p>';
-                    } else {
-                        modoTeclado = 'cantidad'; // Revertir modo teclado
-                        modalPaymentDetailsArea.innerHTML = '<p class="text-muted"><em>Seleccione un método de pago.</em></p>';
+                // Lógica de autocompletar si es tarjeta o transferencia y efectivo no cubre
+                if (this.id !== 'payment-cash-amount' && (this.value === '' || parseFloat(this.value) === 0)) {
+                    const cashVal = parseFloat(paymentCashAmountInput.value) || 0;
+                    const cardVal = parseFloat(paymentCardAmountInput.value) || 0;
+                    const transferVal = parseFloat(paymentTransferAmountInput.value) || 0;
+                    
+                    let otrosPagos = 0;
+                    if (this.id === 'payment-card-amount') {
+                        otrosPagos = transferVal;
+                    } else if (this.id === 'payment-transfer-amount') {
+                        otrosPagos = cardVal;
+                    }
+
+                    const faltante = currentOrderTotal - cashVal - otrosPagos;
+                    if (faltante > 0) {
+                        this.value = faltante.toFixed(0);
+                        bufferTeclado = this.value;
+                        actualizarCalculosDePago();
                     }
                 }
             });
-        });
-        // Activar el método por defecto visualmente y la lógica del formulario
-        const defaultPaymentMethod = document.querySelector('input[name="modalPaymentMethod"]:checked');
-        if (defaultPaymentMethod) {
-            defaultPaymentMethod.dispatchEvent(new Event('change'));
         }
-    } else {
-        console.warn("Radios de método de pago o área de detalles del modal no encontrados.");
-    }
+    });
     
     // Keypad
     if (keypadContainer) {
@@ -479,20 +556,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const target = e.target.closest('.keypad-btn');
             if (!target || target.disabled) return;
 
+            const valorKeypad = target.textContent.trim();
+
             if (target.id === 'btn-cantidad') {
                 cambiarModoTeclado('cantidad');
             } else if (target.id === 'btn-precio') {
                 cambiarModoTeclado('precio');
-            } else {
-                let valor = target.textContent.trim();
+            } else { // Es un número o borrar
+                let valorParaProcesar = valorKeypad;
                 if (target.querySelector('.bi-backspace-fill')) {
-                    valor = 'borrar';
+                    valorParaProcesar = 'borrar';
                 }
-                procesarEntradaTeclado(valor);
+                procesarEntradaTeclado(valorParaProcesar);
             }
         });
     } else {
-        console.warn("Contenedor de keypad #keypad-container no encontrado.");
+        console.warn("Contenedor de keypad #keypad-container no encontrado.")
     }
 
     // Scan Toggle
@@ -534,13 +613,16 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn("Input de búsqueda #product-search-input no encontrado.");
     }
 
-    // Deseleccionar item del carrito al hacer clic fuera
+    // Deseleccionar item del carrito al hacer clic fuera de la columna derecha o el keypad
     document.addEventListener('click', (e) => {
         const rightColumn = document.getElementById('right-column');
-        if (rightColumn && !rightColumn.contains(e.target) && keypadContainer && !keypadContainer.contains(e.target)) {
-            if (!e.target.closest(`.${styles['cart-item-selected']}`) && !e.target.closest('#cart-area li')) { // Verificamos que no sea un clic en un item del carrito
-                deseleccionarItemCarrito();
-            }
+        const isClickInsideRightColumn = rightColumn ? rightColumn.contains(e.target) : false;
+        const isClickInsideKeypad = keypadContainer ? keypadContainer.contains(e.target) : false;
+        const isClickInsideModal = paymentProcessModalEl ? paymentProcessModalEl.contains(e.target) : false;
+
+
+        if (!isClickInsideRightColumn && !isClickInsideKeypad && !isClickInsideModal) {
+            deseleccionarItemCarrito();
         }
     });
     

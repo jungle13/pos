@@ -186,3 +186,16 @@ footer {
         .col-md-8.d-flex.flex-column {
             justify-content: space-between; /* Para ayudar a posicionar el botón de pago abajo si hay poco contenido */
         }
+
+.payment-method-row {
+    /* Puedes añadir estilos específicos si lo necesitas, 
+       pero Bootstrap debería manejar bien los form-label y form-control */
+}
+
+#payment-remaining-container.has-surplus #payment-remaining-label {
+    color: #198754; /* Verde para indicar "Cambio a entregar" */
+}
+#payment-remaining-container.has-deficit #payment-remaining-label {
+    color: #dc3545; /* Rojo para indicar "Faltante" */
+}
+/* El color del monto ya se maneja con text-success y text-danger en el JS */
