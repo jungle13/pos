@@ -55,10 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <ul class="totals-list">${desglosePagoHtml}</ul>
 
-            <div class="text-center mt-4">
-                <p class="small mb-1">¿Necesita factura?</p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://jungle-one.sistoo.com/ticket" alt="QR Code" class="qr-code" style="margin: 0 auto 15px auto;">
-            </div>
 
             <p class="text-center small">¡Gracias por su compra en Farmacia Lilu!</p>
             <p class="text-center small" style="font-size: 0.7rem; color: #6c757d;">Powered by Jungle One 2025</p>
