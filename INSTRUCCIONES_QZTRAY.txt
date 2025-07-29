@@ -1,0 +1,52 @@
+========================================
+INSTRUCCIONES DE INSTALACIÓN DE QZ TRAY
+========================================
+
+Para que la impresión de recibos funcione directamente en la impresora térmica,
+es necesario instalar un pequeño programa llamado QZ Tray. Este programa actúa
+como un "puente" seguro entre nuestra aplicación web y las impresoras de tu computador.
+
+---
+PASO 1: DESCARGA
+---
+1. Ve a la página oficial de descargas de QZ Tray: https://qz.io/download/
+2. Descarga la versión recomendada para tu sistema operativo (Windows, macOS o Linux).
+
+---
+PASO 2: INSTALACIÓN
+---
+1. Ejecuta el archivo que descargaste.
+2. Sigue las instrucciones del instalador. Generalmente, solo necesitas hacer clic en "Siguiente" y aceptar los términos. No requiere ninguna configuración especial.
+
+---
+PASO 3: EJECUTAR QZ TRAY
+---
+1. Una vez instalado, busca "QZ Tray" en tus programas y ejecútalo.
+2. El programa NO abrirá una ventana grande. En su lugar, aparecerá un pequeño
+   ícono con forma de bandeja de impresora en la barra de tareas (cerca del reloj).
+   Esto significa que ya está corriendo en segundo plano.
+
+---
+PASO 4: CONCEDER PERMISOS (EL PASO MÁS IMPORTANTE)
+---
+1. La primera vez que la aplicación web intente conectarse con QZ Tray,
+   el programa te mostrará una ventana emergente de seguridad.
+   
+2. En esta ventana, te preguntará si confías en la aplicación web para acceder
+   a tus impresoras.
+
+3. **DEBES MARCAR la casilla que dice "Remember this decision" (Recordar esta decisión).**
+   Si no lo haces, te lo preguntará cada vez que recargues la página.
+
+4. **DEBES HACER CLIC en el botón "Allow" (Permitir).**
+
+Si por error haces clic en "Deny" (Denegar), la impresión no funcionará.
+Para solucionarlo, puedes hacer clic derecho en el ícono de QZ Tray -> "Site Manager" ->
+"Blocked" y eliminar el sitio de la lista de bloqueados.
+
+---
+SOLUCIÓN DE PROBLEMAS BÁSICOS
+---
+- ¿La impresión no funciona?: Asegúrate de que el ícono de QZ Tray esté visible y activo.
+- ¿La aplicación dice que no se puede conectar?: Revisa que tu firewall o antivirus no estén bloqueando QZ Tray.
+- ¿No aparece mi impresora en la lista?: Confirma que la impresora esté conectada, encendida y correctamente instalada en tu sistema operativo.

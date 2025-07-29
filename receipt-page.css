@@ -1,0 +1,94 @@
+/* receipt-page.css */
+
+.actions-column-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.receipt-preview-column {
+    background-color: #f3f3f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+#receipt-preview-wrapper {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 450px;
+}
+
+#receipt-preview {
+    font-family: 'Courier New', Courier, monospace;
+    color: #333;
+}
+
+#receipt-preview h5 { font-size: 1rem; text-transform: uppercase; }
+#receipt-preview p { margin-bottom: 3px; font-size: 0.85rem; }
+#receipt-preview .item-list, #receipt-preview .totals-list { list-style: none; padding: 0; margin: 15px 0; border-top: 1px dashed #666; padding-top: 15px; }
+#receipt-preview .item-list li, #receipt-preview .totals-list li { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+#receipt-preview .qr-code { display: block; margin: 20px auto; }
+
+/* Estilo del cuadro de pago exitoso */
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.alert-success h4.alert-heading {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.alert-success p.display-6 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+
+/* ===== BLOQUE DE IMPRESIÓN CORREGIDO Y SIMPLIFICADO ===== */
+@media print {
+    /* Ocultamos todos los elementos que no queremos en la impresión */
+    body > .navbar,
+    body > footer,
+    .col-lg-6:not(.receipt-preview-column) { /* Oculta la columna de acciones */
+        display: none !important;
+    }
+
+    /* Reseteamos los contenedores padre para que no interfieran */
+    body,
+    .container-fluid,
+    .row,
+    .receipt-preview-column {
+        padding: 0 !important;
+        margin: 0 !important;
+        background-color: transparent !important;
+    }
+
+    /* Estilizamos el recibo para que sea el único protagonista */
+    #receipt-preview-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80mm; /* Ancho de un tiquete de impresora térmica */
+        padding: 5mm; /* Margen interno para que no se pegue al borde */
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+    
+    #receipt-preview {
+        color: #000 !important; /* Aseguramos que el texto sea negro */
+    }
+}

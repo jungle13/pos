@@ -1,0 +1,1128 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+images/gorilla_96972.svg
+index.html
+payment-page.css
+payment-script.js
+payment.html
+receipt-page.css
+receipt-script.js
+receipt.html
+script.js
+style.css
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="receipt-page.css">
+/* receipt-page.css */
+
+.actions-column-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.receipt-preview-column {
+    background-color: #f3f3f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+#receipt-preview-wrapper {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 450px;
+}
+
+#receipt-preview {
+    font-family: 'Courier New', Courier, monospace;
+    color: #333;
+}
+
+#receipt-preview h5 { font-size: 1rem; text-transform: uppercase; }
+#receipt-preview p { margin-bottom: 3px; font-size: 0.85rem; }
+#receipt-preview .item-list, #receipt-preview .totals-list { list-style: none; padding: 0; margin: 15px 0; border-top: 1px dashed #666; padding-top: 15px; }
+#receipt-preview .item-list li, #receipt-preview .totals-list li { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+#receipt-preview .qr-code { display: block; margin: 20px auto; }
+
+/* Estilo del cuadro de pago exitoso */
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.alert-success h4.alert-heading {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.alert-success p.display-6 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+
+/* ===== BLOQUE DE IMPRESIÓN CORREGIDO Y SIMPLIFICADO ===== */
+@media print {
+    /* Ocultamos todos los elementos que no queremos en la impresión */
+    body > .navbar,
+    body > footer,
+    .col-lg-6:not(.receipt-preview-column) { /* Oculta la columna de acciones */
+        display: none !important;
+    }
+
+    /* Reseteamos los contenedores padre para que no interfieran */
+    body,
+    .container-fluid,
+    .row,
+    .receipt-preview-column {
+        padding: 0 !important;
+        margin: 0 !important;
+        background-color: transparent !important;
+    }
+
+    /* Estilizamos el recibo para que sea el único protagonista */
+    #receipt-preview-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80mm; /* Ancho de un tiquete de impresora térmica */
+        padding: 5mm; /* Margen interno para que no se pegue al borde */
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+    
+    #receipt-preview {
+        color: #000 !important; /* Aseguramos que el texto sea negro */
+    }
+}
+</file>
+
+<file path="receipt-script.js">
+document.addEventListener('DOMContentLoaded', () => {
+    // --- ELEMENTOS DEL DOM ---
+    const successfulPaymentTotalEl = document.getElementById('successful-payment-total');
+    const receiptPreviewEl = document.getElementById('receipt-preview');
+    const printBtn = document.getElementById('print-receipt-btn');
+
+    // --- DATOS Y RENDERIZADO ---
+    const ordenGuardada = localStorage.getItem('ordenParaPago');
+
+    if (!ordenGuardada) {
+        receiptPreviewEl.innerHTML = '<p class="text-danger">Error: No se encontró la información de la orden.</p>';
+        return;
+    }
+
+    const orden = JSON.parse(ordenGuardada);
+    renderizarRecibo(orden);
+
+    function renderizarRecibo(orden) {
+        const subtotal = orden.total / 1.19;
+        const iva = orden.total - subtotal;
+        successfulPaymentTotalEl.textContent = formatearMoneda(orden.total);
+
+        const itemsHtml = orden.items.map(item => `
+            <li>
+                <span>${item.cantidad}x ${item.nombre}</span>
+                <span>${formatearMoneda(item.precio * item.cantidad)}</span>
+            </li>
+        `).join('');
+        
+        const metodoPago = orden.metodoPago || 'efectivo';
+        let desglosePagoHtml = '';
+        if (metodoPago === 'efectivo') {
+            desglosePagoHtml = `<li><span>Efectivo:</span><span>${formatearMoneda(orden.total)}</span></li>`;
+        } // ... (otras opciones de pago)
+
+        // ===== AJUSTES REALIZADOS EN ESTE BLOQUE =====
+        receiptPreviewEl.innerHTML = `
+            <div class="text-center mb-4">
+                <h5 class="fw-bold mb-1">FARMACIA LILU</h5>
+                <p class="mb-0">DIRECCION LAGO PEYPUS 123 COL. ANAHUAC</p>
+                <p class="mb-0">(55)5513343994</p>
+            </div>
+            
+            <p>TICKET: SALE-001-${Math.floor(Date.now() / 1000)}</p>
+            <p>FECHA: ${new Date().toLocaleString('es-CO')}</p>
+            <p>ATENDIDO POR: Cajero Principal</p>
+            
+            <ul class="item-list">${itemsHtml}</ul>
+            
+            <ul class="totals-list">
+                <li><span>Subtotal</span><span>${formatearMoneda(subtotal)}</span></li>
+                <li><span>IVA 19%</span><span>${formatearMoneda(iva)}</span></li>
+                <li><strong>Total</strong><strong>${formatearMoneda(orden.total)}</strong></li>
+            </ul>
+
+            <ul class="totals-list">${desglosePagoHtml}</ul>
+
+            <div class="text-center mt-4">
+                <p class="small mb-1">¿Necesita factura?</p>
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://jungle-one.sistoo.com/ticket" alt="QR Code" class="qr-code" style="margin: 0 auto 15px auto;">
+            </div>
+
+            <p class="text-center small">¡Gracias por su compra en Farmacia Lilu!</p>
+            <p class="text-center small" style="font-size: 0.7rem; color: #6c757d;">Powered by Jungle One 2025</p>
+        `;
+    }
+
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+    }
+
+    function formatearMoneda(valor) {
+        return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(valor);
+    }
+});
+</file>
+
+<file path="receipt.html">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema POS - Recibo de Pago</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="receipt-page.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="index.html">Sistema POS</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid flex-grow-1">
+        <div class="row h-100">
+            <div class="col-lg-6 d-flex flex-column align-items-center justify-content-center p-4">
+                <div style="width: 100%; max-width: 500px;">
+                    <div class="alert alert-success" role="alert">
+                        <h4 class="alert-heading text-uppercase"><i class="bi bi-check-circle-fill"></i> ¡Pago Exitoso!</h4>
+                        <p class="display-6 fw-bold" id="successful-payment-total">$0</p>
+                    </div>
+                    <button class="btn btn-secondary w-100 py-3 mt-3" id="print-receipt-btn">
+                        <i class="bi bi-printer-fill me-2"></i>Imprimir Recibo
+                    </button>
+                    <a href="index.html" class="btn btn-dark w-100 py-3 mt-4">
+                        <i class="bi bi-plus-circle me-2"></i>Nueva Orden
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-lg-6 receipt-preview-column">
+                <div id="receipt-preview-wrapper">
+                    <div id="receipt-preview">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-light text-center text-lg-start">
+        <div class="d-flex justify-content-center align-items-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+            <span class="footer-text">Creado por JUNGLE ONE SAS</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="receipt-script.js"></script>
+</body>
+</html>
+</file>
+
+<file path="images/gorilla_96972.svg">
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>gorilla</title><path d="M50.72,27.94a6.69,6.69,0,0,0,.6.59l1,.85a2.53,2.53,0,0,0,3.46-.12l.74-.74A8.61,8.61,0,0,0,59,22.43a1.05,1.05,0,0,0-.31-.74l-1.15-1.15A1.78,1.78,0,0,1,57,19.23l.17-5.37a6.69,6.69,0,0,0-.86-3.49,8.89,8.89,0,0,0-3.77-3.59A7.4,7.4,0,0,0,49.25,6a9,9,0,0,0-7.59,4.13,3.54,3.54,0,0,1-2.82,1.62l-2.6.11A23.16,23.16,0,0,0,29.92,13,5.81,5.81,0,0,0,26.17,17,13.17,13.17,0,0,1,24,21.3L19.9,26.8a2.07,2.07,0,0,1-2.31.72l-2.34-.78a7.55,7.55,0,0,0-4.51-.08h0a7.55,7.55,0,0,0-4.09,3l-.31.45A7.55,7.55,0,0,0,5,34.35v.33a12.5,12.5,0,0,0,3.43,8.6h0a.93.93,0,0,1,0,1.24,11,11,0,0,0-2.34,9.4l.57,2.65A1.8,1.8,0,0,0,8.46,58H14.4a.6.6,0,0,0,.6-.6A1.55,1.55,0,0,0,14.06,56l-.1,0a.46.46,0,0,1-.14-.74L17,52a6.86,6.86,0,0,0,2-4.85V43a1,1,0,0,1,2,0v.78A2.22,2.22,0,0,0,23.22,46,11.33,11.33,0,0,0,30,43.73l3.13-2.35A4.61,4.61,0,0,0,35,37.69a4.09,4.09,0,0,0-1.2-2.89l-.39-.39a1.41,1.41,0,0,1,2-2l.35.35a4.23,4.23,0,0,1,1.24,3v.68a5.9,5.9,0,0,0,3.17,5.23l3.94,2.06a2.37,2.37,0,0,1,1.27,2.1v1.31a5.58,5.58,0,0,0,2.35,4.55l2.16,1.53A1.16,1.16,0,0,1,50,55l-.61.61a1.41,1.41,0,0,0,1,2.41H52.5a6,6,0,0,0,4.26-1.77,6.46,6.46,0,0,0,1.84-5.37L58.13,47A32.21,32.21,0,0,0,51.32,30.9l-2-2.47a1.55,1.55,0,0,1-.34-1V26Z"/><path d="M27.53,52.44a11.68,11.68,0,0,0,2.34-5.5.54.54,0,0,0-.74-.57l-4.57,1.92a4.12,4.12,0,0,1-3.11,0,.77.77,0,0,0-1,.53l-.05.21a12.27,12.27,0,0,1-2.76,5.2,1.18,1.18,0,0,0-.11,1.44l.76,1.16A2.52,2.52,0,0,0,20.37,58H26.2a.8.8,0,0,0,.8-.8,1,1,0,0,0-.65-1L26,56.11a.85.85,0,0,1-.35-1.31Z"/><path d="M41.51,45.12l-4-2.37a2.25,2.25,0,0,0-2.45.11,3.77,3.77,0,0,0-1.47,3.94l.59,2.45A8.5,8.5,0,0,0,38,54.51a.58.58,0,0,1,0,1l-.29.15A1.24,1.24,0,0,0,38.24,58h3.24a2.65,2.65,0,0,0,2.29-1.31L45,54.61a2.6,2.6,0,0,0-.48-3.22l-.61-.57a2.78,2.78,0,0,1-.89-2V47.73A3,3,0,0,0,41.51,45.12Z"/></svg>
+</file>
+
+<file path="payment-page.css">
+/* src/payment-page.css o como lo nombres */
+
+/* Estilos para la columna principal de pago */
+.payment-main-column {
+    /* background-color: #f8f9fa; /* Un fondo ligeramente diferente si se desea */
+    /* padding: 2rem; */
+    /* border-right: 1px solid #dee2e6; */ /* Separador opcional */
+}
+
+.payment-methods-section {
+    margin-bottom: 2rem; /* Espacio antes de la sección de total y pago */
+}
+
+.payment-confirmation-section {
+    border-top: 1px solid #e9ecef; /* Separador sutil */
+    padding-top: 1.5rem;
+}
+
+.total-display .total-label {
+    font-size: 1.1rem; /* Tamaño para la etiqueta "TOTAL A PAGAR" */
+}
+
+.total-amount-large {
+    font-size: 2.8rem;  /* Tamaño de fuente grande para el monto */
+    font-weight: bold;
+    color: #198754; /* Verde éxito de Bootstrap, o el color que prefieras */
+    line-height: 1.2;
+}
+
+/* Estilos para la columna de resumen de orden */
+.payment-summary-column {
+    /* background-color: #ffffff; */
+    /* padding: 1.5rem; */
+}
+
+#payment-order-summary-area .list-group-item {
+    border-left: 0;
+    border-right: 0;
+}
+
+#payment-order-summary-area .list-group-item:first-child {
+    border-top: 0;
+}
+
+#payment-order-summary-area .list-group-item:last-child {
+    border-bottom: 0;
+}
+
+.order-subtotal-section {
+    margin-top: 1rem;
+    border-top: 1px dashed #ced4da;
+    padding-top: 1rem;
+}
+
+/* Media Query para asegurar que en móvil el contenido de pago no se comprima demasiado */
+@media (max-width: 767.98px) {
+    .payment-main-column {
+        border-right: none;
+        padding-bottom: 2rem; /* Espacio antes del resumen en móvil si se apilan */
+    }
+    .payment-summary-column {
+        margin-top: 2rem;
+        border-top: 1px solid #dee2e6;
+        padding-top: 1.5rem;
+    }
+    .total-amount-large {
+        font-size: 2.2rem; 
+    }
+    .btn-success.w-75 { /* Hacer el botón un poco más grande en móvil si es necesario */
+        width: 90% !important; 
+    }
+}
+
+/* payment-page.css */
+
+/* ... (estilos anteriores) ... */
+
+.payment-method-selection-column {
+    background-color: #f8f9fa; /* Un fondo suave si se desea para esta columna */
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item {
+    margin-bottom: 0.75rem; /* Espacio entre opciones de pago */
+    border-radius: 0.375rem; /* Bordes redondeados */
+    border-width: 1px; /* Borde más sutil si se quiere */
+    transition: all 0.2s ease-in-out;
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item:hover {
+    background-color: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item.active { /* Estilo para la opción seleccionada */
+    background-color: #0d6efd; /* Azul primario de Bootstrap */
+    border-color: #0a58ca;
+    color: white;
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item.active .text-muted {
+    color: #e0e0e0 !important; /* Para que el texto secundario también sea legible */
+}
+
+.payment-method-selection-column .list-group-item.payment-option-item h5 i {
+    font-size: 1.2em; /* Iconos un poco más grandes */
+}
+
+#payment-order-summary-compact-area {
+    font-size: 0.9rem;
+}
+
+#payment-order-summary-compact-area .fw-bold {
+    color: #343a40;
+}
+</file>
+
+<file path="payment-script.js">
+document.addEventListener('DOMContentLoaded', () => {
+    // --- 1. LEER Y MOSTRAR DATOS DE LA ORDEN ---
+    const datosOrdenGuardada = localStorage.getItem('ordenParaPago');
+    
+    if (datosOrdenGuardada) {
+        const orden = JSON.parse(datosOrdenGuardada);
+        console.log("Orden recibida para pago:", orden);
+
+        // Mostrar el total en el elemento correspondiente
+        const paymentTotalPriceEl = document.getElementById('payment-total-price');
+        if (paymentTotalPriceEl) {
+            paymentTotalPriceEl.textContent = formatearMoneda(orden.total);
+        }
+
+        // Adicional: Renderizar un resumen simple de la orden
+        const compactSummaryEl = document.getElementById('compact-summary-items');
+        if (compactSummaryEl) {
+            compactSummaryEl.innerHTML = ''; // Limpiar contenido previo
+            orden.items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'd-flex justify-content-between small';
+                itemDiv.innerHTML = `<span>${item.cantidad}x ${item.nombre}</span> <span>${formatearMoneda(item.precio * item.cantidad)}</span>`;
+                compactSummaryEl.appendChild(itemDiv);
+            });
+        }
+
+    } else {
+        console.error("No se encontraron datos de la orden para el pago.");
+        // Opcional: deshabilitar el botón de pago si no hay orden
+        const btnConfirmarPago = document.getElementById('btn-confirmar-pago-final');
+        if (btnConfirmarPago) btnConfirmarPago.disabled = true;
+    }
+
+    // --- 2. CONFIGURAR EL BOTÓN DE PAGO ---
+    const btnConfirmarPago = document.getElementById('btn-confirmar-pago-final');
+    if (btnConfirmarPago) {
+        btnConfirmarPago.addEventListener('click', () => {
+            const datosOriginales = localStorage.getItem('ordenParaPago');
+            if (!datosOriginales) {
+                alert("Error: No se puede proceder al pago sin una orden activa.");
+                return;
+            }
+
+            // --- AJUSTE: Capturar método de pago y guardarlo ---
+            const metodoActivo = document.querySelector('.payment-option-item.active');
+            const metodoSeleccionado = metodoActivo ? metodoActivo.dataset.method : 'efectivo'; // Default a efectivo
+            
+            const ordenConPago = JSON.parse(datosOriginales);
+            ordenConPago.metodoPago = metodoSeleccionado; // Añadir el método a la orden
+            
+            localStorage.setItem('ordenParaPago', JSON.stringify(ordenConPago));
+
+            console.log("Pago confirmado. Redirigiendo a la pantalla de recibo...");
+            window.location.href = 'receipt.html';
+        });
+    }
+
+    // --- LÓGICA PARA SELECCIÓN VISUAL DEL MÉTODO DE PAGO ---
+    const paymentOptions = document.querySelectorAll('.payment-option-item');
+    paymentOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            paymentOptions.forEach(opt => opt.classList.remove('active'));
+            option.classList.add('active');
+        });
+    });
+
+});
+
+/**
+ * Formatea un número como moneda colombiana (COP).
+ * @param {number} valor El número a formatear.
+ * @returns {string} El valor formateado como moneda.
+ */
+function formatearMoneda(valor) {
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(valor);
+}
+</file>
+
+<file path="payment.html">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema POS - Procesar Pago</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos adicionales para destacar el total a pagar */
+        .total-a-pagar-grande {
+            font-size: 2.5rem; /* Tamaño de fuente grande */
+            font-weight: bold;
+            color: #28a745; /* Un color verde para destacar, puedes ajustarlo */
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center; /* Centrar el total */
+        }
+        .col-md-8.d-flex.flex-column {
+            justify-content: space-between; /* Para ayudar a posicionar el botón de pago abajo si hay poco contenido */
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="index.html">Sistema POS</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4" id="main-container">
+        <div class="row flex-grow-1" id="main-content-row">
+            
+            <div class="col-md-8 d-flex flex-column">
+                <div>
+                    <h2 class="mb-3">Procesar Pago</h2>
+                    <hr>
+                    
+                  
+                </div>
+                <h5 class="text-muted small">Resumen de Orden:</h5>
+                <div class="d-flex justify-content-between small">
+                                <span>Consulta Virtual</span>
+                                <span>$34,000</span>
+                            </div>
+                            <div class="d-flex justify-content-between small">
+                                <span>Consulta Presencial</span>
+                                <span>$16,000</span>
+                            </div>
+
+                <div class="mt-auto text-center"> 
+                    <div id="total-payment-section" class="my-4">
+                        <h3 class="text-muted">Total a Pagar:</h3>
+                        <div id="payment-total-price" class="total-a-pagar-grande">$123,450</div> 
+                    </div>
+                     
+                </div>
+            </div>
+
+            
+            
+            <div class="col-md-4 d-flex flex-column payment-method-selection-column p-4"> 
+                <div class="sticky-top">
+                    <h4 class="mb-3">Elige tu Método de Pago</h4>
+                    <hr>
+                    <div id="payment-method-options" class="list-group">
+                        
+                        <a href="#" class="list-group-item list-group-item-action payment-option-item" data-method="efectivo">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1"><i class="bi bi-cash-coin me-2"></i>Pago en Efectivo</h5>
+                            </div>
+                            <p class="mb-1 small text-muted">Paga el monto exacto al momento de recibir o en caja.</p>
+                        </a>
+
+                        
+                        <a href="#" class="list-group-item list-group-item-action payment-option-item" data-method="tarjeta">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1"><i class="bi bi-credit-card-2-front-fill me-2"></i>Pago con Tarjeta</h5>
+                            </div>
+                            <p class="mb-1 small text-muted">Aceptamos tarjetas débito y crédito. Se requerirá datáfono.</p>
+                        </a>
+
+                        
+                        <a href="#" class="list-group-item list-group-item-action payment-option-item" data-method="transferencia">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1"><i class="bi bi-bank me-2"></i>Pago por Transferencia</h5>
+                            </div>
+                            <p class="mb-1 small text-muted">Transfiere a nuestra cuenta Bancolombia, Nequi o Daviplata.</p>
+                        </a>
+                    </div>
+                    
+                    
+                    <div id="payment-order-summary-compact-area" class="mt-4 border-top pt-3">
+                         
+                         <div id="compact-summary-items">
+
+                           
+                            
+
+                            <div id="keypad-container" class="mt-3">
+                        <button class="keypad-btn">1</button>
+                        <button class="keypad-btn">2</button>
+                        <button class="keypad-btn">3</button>
+                        <button class="keypad-btn keypad-btn-function" id="btn-cantidad">Cantidad</button>
+                        <button class="keypad-btn">4</button>
+                        <button class="keypad-btn">5</button>
+                        <button class="keypad-btn">6</button>
+                        <button class="keypad-btn keypad-btn-function">%</button>
+                        <button class="keypad-btn">7</button>
+                        <button class="keypad-btn">8</button>
+                        <button class="keypad-btn">9</button>
+                        <button class="keypad-btn keypad-btn-function" id="btn-precio">Precio</button>
+                        <button class="keypad-btn">.</button>
+                        <button class="keypad-btn">0</button>
+                        <button class="keypad-btn" disabled>&nbsp;</button> 
+                        <button class="keypad-btn keypad-btn-delete" title="Borrar"><i class="bi bi-backspace-fill"></i></button>
+                    </div>
+                            
+                            
+                         </div>
+                        <hr class="my-2">
+                            <div class="d-flex justify-content-center gap-3 w-100"> 
+                                <button class="btn btn-success flex-fill py-3 fw-bold mb-3" id="btn-confirmar-pago-final">
+                                    <i class="bi bi-check-circle-fill me-2"></i>Confirmar y Pagar
+                                </button>
+                                <button class="btn btn-outline-secondary flex-fill py-3 fw-bold mb-3" id="btn-volver-pago"> 
+                                    <i class="bi bi-arrow-left-circle-fill me-2"></i>Volver
+                                </button>
+                            </div>
+                    </div>
+
+                </div>
+            </div>
+            
+
+            
+        </div>
+    </div>
+
+    <footer class="bg-light text-center text-lg-start">
+        <div class="d-flex justify-content-center align-items-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+            <span class="footer-text">Creado por </span>
+            <svg class="footer-logo" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>gorilla</title><path d="M50.72,27.94a6.69,6.69,0,0,0,.6.59l1,.85a2.53,2.53,0,0,0,3.46-.12l.74-.74A8.61,8.61,0,0,0,59,22.43a1.05,1.05,0,0,0-.31-.74l-1.15-1.15A1.78,1.78,0,0,1,57,19.23l.17-5.37a6.69,6.69,0,0,0-.86-3.49,8.89,8.89,0,0,0-3.77-3.59A7.4,7.4,0,0,0,49.25,6a9,9,0,0,0-7.59,4.13,3.54,3.54,0,0,1-2.82,1.62l-2.6.11A23.16,23.16,0,0,0,29.92,13,5.81,5.81,0,0,0,26.17,17,13.17,13.17,0,0,1,24,21.3L19.9,26.8a2.07,2.07,0,0,1-2.31.72l-2.34-.78a7.55,7.55,0,0,0-4.51-.08h0a7.55,7.55,0,0,0-4.09,3l-.31.45A7.55,7.55,0,0,0,5,34.35v.33a12.5,12.5,0,0,0,3.43,8.6h0a.93.93,0,0,1,0,1.24,11,11,0,0,0-2.34,9.4l.57,2.65A1.8,1.8,0,0,0,8.46,58H14.4a.6.6,0,0,0,.6-.6A1.55,1.55,0,0,0,14.06,56l-.1,0a.46.46,0,0,1-.14-.74L17,52a6.86,6.86,0,0,0,2-4.85V43a1,1,0,0,1,2,0v.78A2.22,2.22,0,0,0,23.22,46,11.33,11.33,0,0,0,30,43.73l3.13-2.35A4.61,4.61,0,0,0,35,37.69a4.09,4.09,0,0,0-1.2-2.89l-.39-.39a1.41,1.41,0,0,1,2-2l.35.35a4.23,4.23,0,0,1,1.24,3v.68a5.9,5.9,0,0,0,3.17,5.23l3.94,2.06a2.37,2.37,0,0,1,1.27,2.1v1.31a5.58,5.58,0,0,0,2.35,4.55l2.16,1.53A1.16,1.16,0,0,1,50,55l-.61.61a1.41,1.41,0,0,0,1,2.41H52.5a6,6,0,0,0,4.26-1.77,6.46,6.46,0,0,0,1.84-5.37L58.13,47A32.21,32.21,0,0,0,51.32,30.9l-2-2.47a1.55,1.55,0,0,1-.34-1V26Z"/><path d="M27.53,52.44a11.68,11.68,0,0,0,2.34-5.5.54.54,0,0,0-.74-.57l-4.57,1.92a4.12,4.12,0,0,1-3.11,0,.77.77,0,0,0-1,.53l-.05.21a12.27,12.27,0,0,1-2.76,5.2,1.18,1.18,0,0,0-.11,1.44l.76,1.16A2.52,2.52,0,0,0,20.37,58H26.2a.8.8,0,0,0,.8-.8,1,1,0,0,0-.65-1L26,56.11a.85.85,0,0,1-.35-1.31Z"/><path d="M41.51,45.12l-4-2.37a2.25,2.25,0,0,0-2.45.11,3.77,3.77,0,0,0-1.47,3.94l.59,2.45A8.5,8.5,0,0,0,38,54.51a.58.58,0,0,1,0,1l-.29.15A1.24,1.24,0,0,0,38.24,58h3.24a2.65,2.65,0,0,0,2.29-1.31L45,54.61a2.6,2.6,0,0,0-.48-3.22l-.61-.57a2.78,2.78,0,0,1-.89-2V47.73A3,3,0,0,0,41.51,45.12Z"/></svg>
+            <span class="footer-text">JUNGLE ONE SAS</span>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="payment-script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2/qz-tray.js"></script>
+    <script src="payment-script.js"></script>
+</file>
+
+<file path="style.css">
+/* --- MAQUETACIÓN GLOBAL DE APLICACIÓN FIJA --- */
+html, body {
+  height: 100%;
+  overflow: hidden; /* Evita el scroll en la página principal */
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* El contenedor principal de la app debe crecer para ocupar el espacio disponible */
+.container-fluid {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Truco clave para que el overflow funcione en flexbox */
+}
+
+#main-container {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+.row.flex-grow-1 {
+  flex-grow: 1 !important;
+  min-height: 0;
+}
+
+footer {
+    flex-shrink: 0;
+}
+
+.footer-logo {
+  height: 28px;
+  width: auto;
+  /* Espaciado simétrico a ambos lados del logo */
+  margin-left: 10px;
+  margin-right: 10px;
+  /* ¡La clave! Colorea el SVG con el mismo color del texto */
+  fill: #6c757d;
+}
+
+.footer-text {
+  font-size: 0.9rem; /* Un tamaño de fuente legible pero no invasivo */
+  color: #6c757d;   /* Un color gris sutil, estándar para texto secundario */
+  font-weight: 500;
+}
+
+#right-column {
+    height: 100%;
+}
+
+#cart-area {
+  flex-grow: 1; 
+  overflow-y: auto; 
+  min-height: 0;
+  border-top: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  padding: 1rem 0.5rem;
+}
+
+.cart-footer {
+    flex-shrink: 0;
+}
+
+/* ----- AJUSTE REALIZADO AQUÍ ----- */
+/* ===== BLOQUE CORREGIDO ===== */
+#product-area {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 12px;
+    flex-grow: 1; 
+    min-height: 0;  
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #dee2e6; 
+    border-radius: .375rem;
+    background-color: #fdfdff; 
+}
+
+/* ... (otros estilos de .card, .quantity-badge etc.) ... */
+
+#product-area .card { 
+    border: 1px solid #e9ecef; 
+    box-shadow: none;
+    align-self: start; /* Asegura que la tarjeta no se estire si la celda del grid es muy alta */
+    /* Considera añadir un max-height aquí si es necesario, por ejemplo: */
+    /* max-height: 200px; */
+}
+#product-area .product-icon-placeholder { height: 60px; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; color: #ced4da; border-bottom: 1px solid #dee2e6; }
+#product-area .product-icon-placeholder .bi-image { font-size: 2rem; }
+#product-area .card-body { padding: 0.5rem; text-align: center; }
+
+#product-area .card-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+    height: 32px; 
+    overflow: hidden;
+}
+/* ----- FIN DEL AJUSTE ----- */
+
+
+.card { position: relative; cursor: pointer; transition: all 0.2s ease-in-out; }
+.card:hover { border-color: #0d6efd; transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.quantity-badge { position: absolute; top: -8px; right: -8px; background-color: #0d6efd; color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 0.9rem; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transform: scale(0); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.quantity-badge.visible { transform: scale(1); }
+#product-area .card { border: 1px solid #e9ecef; box-shadow: none; }
+#product-area .product-icon-placeholder { height: 60px; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; color: #ced4da; border-bottom: 1px solid #dee2e6; }
+#product-area .product-icon-placeholder .bi-image { font-size: 2rem; }
+#product-area .card-body { padding: 0.5rem; text-align: center; }
+
+
+
+#product-area .card-text { font-size: 0.9rem; font-weight: 600; }
+#view-selector-tabs .nav-link { background-color: #f8f9fa; color: #212529; font-weight: 500; margin-right: 8px; border: 1px solid #dee2e6; border-radius: 0.375rem; }
+#view-selector-tabs .nav-link.active, #view-selector-tabs .nav-link:hover { background-color: #6c757d; color: #ffffff; border-color: #6c757d; }
+#view-selector-tabs .nav-link:has(> .bi) { padding-left: 0.75rem; padding-right: 0.75rem; }
+.orden-activa-btn { background-color: #ffffff; border: 1px solid #dee2e6; color: #495057; }
+.orden-activa-btn:hover { background-color: #f1f3f5; }
+.orden-activa-btn.orden-seleccionada { background-color: #cfe2ff; color: #084298; border-color: #b6d4fe; font-weight: 500; box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25); }
+#keypad-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.keypad-btn { display: inline-flex; justify-content: center; align-items: center; padding: 1rem 0; font-size: 1.25rem; font-weight: 500; border-radius: 0.5rem; border: 1px solid #ced4da; background-color: #f8f9fa; color: #212529; cursor: pointer; transition: all 0.15s ease-in-out; user-select: none; }
+.keypad-btn:hover { border-color: #adb5bd; background-color: #e9ecef; }
+.keypad-btn:active { background-color: #dee2e6; transform: scale(0.97); }
+.keypad-btn-function { background-color: #e9ecef; font-size: 1rem; }
+.keypad-btn-delete { background-color: #fce1e3; border-color: #f7c6cb; color: #b02a37; font-size: 1.2rem; }
+.keypad-btn-delete:hover { background-color: #f8d7da; border-color: #f7c6cb; }
+
+/* --- NUEVO: Estilo para el ítem seleccionado en el carrito --- */
+#cart-area .list-group-item {
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+
+#cart-area .list-group-item.cart-item-selected {
+    background-color: #cfe2ff; /* Mismo azul claro que las órdenes activas */
+    border-color: #b6d4fe;
+}
+
+/* --- NUEVO: Estilo para el botón de modo activo en el teclado --- */
+.keypad-btn.keypad-btn-active {
+    background-color: #0d6efd; /* Azul primario de Bootstrap */
+    color: white;
+    border-color: #0a58ca;
+}
+.keypad-btn.keypad-btn-active:hover {
+    background-color: #0b5ed7;
+    color: white;
+}
+
+
+/* --- NUEVO: Estilos para la Lista de Clientes en el Modal --- */
+#modal-client-list .list-group-item {
+    cursor: pointer;
+}
+.client-name {
+  font-weight: 600;
+  color: #212529;
+}
+.client-details {
+  font-size: 0.85rem;
+  color: #6c757d;
+  display: block;
+  margin-top: 2px;
+}
+
+
+#product-area .h5 { /* Para el mensaje "Por favor seleccione..." */
+    font-weight: 300;
+}
+
+.payment-method-btn i {
+    vertical-align: middle;
+}
+</file>
+
+<file path="index.html">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema POS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand" href="#">Sistema POS</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4" id="main-container">
+        <div class="row flex-grow-1" id="main-content-row">
+            <div class="col-md-8 d-flex flex-column">
+                <ul class="nav nav-pills mb-4" id="view-selector-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" id="tab-registro">Registro</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="tab-ordenes">Órdenes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="btn-nuevo" title="Añadir Nuevo Ítem">
+                            <i class="bi bi-plus-lg"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link orden-activa-btn" href="#" data-orden-id="ORD-001">ORD-001</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link orden-activa-btn" href="#" data-orden-id="ORD-002">ORD-002</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link orden-activa-btn" href="#" data-orden-id="ORD-003">ORD-003</a>
+                    </li>
+                </ul>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Productos</h2>
+    <div class="d-flex align-items-center" style="flex-basis: 60%;">
+    <div style="flex-basis: 60%;" class="me-2"> <input type="search" id="product-search-input" class="form-control w-100" placeholder="🔍 Buscar por nombre o código">
+    </div>
+    <div style="flex-basis: 30%;"> <button type="button" class="btn btn-outline-success d-flex align-items-center w-100 align-items-center justify-content-center" id="btn-toggle-scan">
+            <i class="bi bi-upc-scan me-2"></i>
+            <span class="button-text">Iniciar Escaneo</span>
+        </button>
+    </div>
+</div>
+</div>
+                <div id="product-area">
+                    </div>
+            </div>
+
+            <div class="col-md-4 d-flex flex-column" id="right-column">
+                <div class="mb-3 d-flex justify-content-end align-items-center" id="customer-action-buttons">
+    <button class="btn btn-outline-danger d-flex align-items-center me-2" type="button" id="btn-cancelar-orden" title="Cancelar Orden Actual">
+        <i class="bi bi-x-circle me-1"></i>Cancelar Orden
+    </button>
+
+    <button class="btn btn-outline-secondary d-flex align-items-center" type="button" id="customer-selector-btn" data-bs-toggle="modal" data-bs-target="#customer-select-modal">
+        <span><i class="bi bi-person-circle me-2"></i>Cliente Final</span>
+    </button>
+</div>
+                
+               
+                <div id="cart-area" class="mb-3">
+                    </div>
+                <div class="cart-footer mt-auto">
+                    <h4 class="mt-3">Total: <span id="total-price">$0</span></h4>
+                    <div id="keypad-container" class="mt-3">
+                        <button class="keypad-btn">1</button>
+                        <button class="keypad-btn">2</button>
+                        <button class="keypad-btn">3</button>
+                        <button class="keypad-btn keypad-btn-function" id="btn-cantidad">Cantidad</button>
+                        <button class="keypad-btn">4</button>
+                        <button class="keypad-btn">5</button>
+                        <button class="keypad-btn">6</button>
+                        <button class="keypad-btn keypad-btn-function">%</button>
+                        <button class="keypad-btn">7</button>
+                        <button class="keypad-btn">8</button>
+                        <button class="keypad-btn">9</button>
+                        <button class="keypad-btn keypad-btn-function" id="btn-precio">Precio</button>
+                        <button class="keypad-btn">.</button>
+                        <button class="keypad-btn">0</button>
+                        <button class="keypad-btn" disabled>&nbsp;</button> 
+                        <button class="keypad-btn keypad-btn-delete" title="Borrar"><i class="bi bi-backspace-fill"></i></button>
+                    </div>
+                    <button class="btn btn-success w-100 mt-3 py-3 fw-bold" id="btn-finalizar-pago">Pagar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-light text-center text-lg-start">
+        <div class="d-flex justify-content-center align-items-center p-3" style="background-color: rgba(0, 0, 0, 0.05);">
+            <span class="footer-text">Creado por </span>
+            <svg class="footer-logo" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>gorilla</title><path d="M50.72,27.94a6.69,6.69,0,0,0,.6.59l1,.85a2.53,2.53,0,0,0,3.46-.12l.74-.74A8.61,8.61,0,0,0,59,22.43a1.05,1.05,0,0,0-.31-.74l-1.15-1.15A1.78,1.78,0,0,1,57,19.23l.17-5.37a6.69,6.69,0,0,0-.86-3.49,8.89,8.89,0,0,0-3.77-3.59A7.4,7.4,0,0,0,49.25,6a9,9,0,0,0-7.59,4.13,3.54,3.54,0,0,1-2.82,1.62l-2.6.11A23.16,23.16,0,0,0,29.92,13,5.81,5.81,0,0,0,26.17,17,13.17,13.17,0,0,1,24,21.3L19.9,26.8a2.07,2.07,0,0,1-2.31.72l-2.34-.78a7.55,7.55,0,0,0-4.51-.08h0a7.55,7.55,0,0,0-4.09,3l-.31.45A7.55,7.55,0,0,0,5,34.35v.33a12.5,12.5,0,0,0,3.43,8.6h0a.93.93,0,0,1,0,1.24,11,11,0,0,0-2.34,9.4l.57,2.65A1.8,1.8,0,0,0,8.46,58H14.4a.6.6,0,0,0,.6-.6A1.55,1.55,0,0,0,14.06,56l-.1,0a.46.46,0,0,1-.14-.74L17,52a6.86,6.86,0,0,0,2-4.85V43a1,1,0,0,1,2,0v.78A2.22,2.22,0,0,0,23.22,46,11.33,11.33,0,0,0,30,43.73l3.13-2.35A4.61,4.61,0,0,0,35,37.69a4.09,4.09,0,0,0-1.2-2.89l-.39-.39a1.41,1.41,0,0,1,2-2l.35.35a4.23,4.23,0,0,1,1.24,3v.68a5.9,5.9,0,0,0,3.17,5.23l3.94,2.06a2.37,2.37,0,0,1,1.27,2.1v1.31a5.58,5.58,0,0,0,2.35,4.55l2.16,1.53A1.16,1.16,0,0,1,50,55l-.61.61a1.41,1.41,0,0,0,1,2.41H52.5a6,6,0,0,0,4.26-1.77,6.46,6.46,0,0,0,1.84-5.37L58.13,47A32.21,32.21,0,0,0,51.32,30.9l-2-2.47a1.55,1.55,0,0,1-.34-1V26Z"/><path d="M27.53,52.44a11.68,11.68,0,0,0,2.34-5.5.54.54,0,0,0-.74-.57l-4.57,1.92a4.12,4.12,0,0,1-3.11,0,.77.77,0,0,0-1,.53l-.05.21a12.27,12.27,0,0,1-2.76,5.2,1.18,1.18,0,0,0-.11,1.44l.76,1.16A2.52,2.52,0,0,0,20.37,58H26.2a.8.8,0,0,0,.8-.8,1,1,0,0,0-.65-1L26,56.11a.85.85,0,0,1-.35-1.31Z"/><path d="M41.51,45.12l-4-2.37a2.25,2.25,0,0,0-2.45.11,3.77,3.77,0,0,0-1.47,3.94l.59,2.45A8.5,8.5,0,0,0,38,54.51a.58.58,0,0,1,0,1l-.29.15A1.24,1.24,0,0,0,38.24,58h3.24a2.65,2.65,0,0,0,2.29-1.31L45,54.61a2.6,2.6,0,0,0-.48-3.22l-.61-.57a2.78,2.78,0,0,1-.89-2V47.73A3,3,0,0,0,41.51,45.12Z"/></svg>
+            <span class="footer-text">JUNGLE ONE SAS</span>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="customer-select-modal" tabindex="-1" aria-labelledby="customerSelectModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="customerSelectModalLabel">Seleccionar Cliente</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="modal-client-list">
+                <p class="text-muted">Cargando clientes...</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+</file>
+
+<file path="script.js">
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- ESTADO GLOBAL DE LA APLICACIÓN ---
+    let carrito = [];
+    let productos = [];
+    let clientes = [];
+    let itemSeleccionadoId = null;
+    let clienteSeleccionadoId = null;
+    let modoTeclado = 'cantidad';
+    let bufferTeclado = '';
+    let scanningActive = false; // NUEVO: Estado para el botón de escaneo
+
+    // --- SELECTORES DE ELEMENTOS DEL DOM ---
+    const productArea = document.getElementById('product-area');
+    const cartArea = document.getElementById('cart-area');
+    const totalPriceEl = document.getElementById('total-price');
+    const keypadContainer = document.getElementById('keypad-container');
+    const btnCantidad = document.getElementById('btn-cantidad');
+    const btnPrecio = document.getElementById('btn-precio');
+    const customerModal = new bootstrap.Modal(document.getElementById('customer-select-modal'));
+    const modalClientList = document.getElementById('modal-client-list');
+    const customerSelectorBtn = document.getElementById('customer-selector-btn');
+    const scanToggleButton = document.getElementById('btn-toggle-scan');
+    const scanToggleButtonText = scanToggleButton.querySelector('.button-text');
+    const btnFinalizarPago = document.getElementById('btn-finalizar-pago');
+
+    // --- LÓGICA DE CLIENTES ---
+    function renderizarClientes() {
+        modalClientList.innerHTML = '';
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group list-group-flush';
+        const defaultOption = document.createElement('li');
+        defaultOption.className = 'list-group-item list-group-item-action';
+        defaultOption.innerHTML = `<div class="client-name">Cliente Final</div>`;
+        defaultOption.addEventListener('click', () => seleccionarCliente('final'));
+        listGroup.appendChild(defaultOption);
+        clientes.forEach(cliente => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item list-group-item-action';
+            li.dataset.clienteId = cliente.id;
+            li.innerHTML = `
+                <div class="client-name">${cliente.nombre} <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill">${cliente.tipo}</span></div>
+                <div class="client-details">
+                    <i class="bi bi-envelope-fill"></i> ${cliente.correo} | <i class="bi bi-telephone-fill"></i> ${cliente.telefono}
+                </div>
+            `;
+            li.addEventListener('click', () => seleccionarCliente(cliente.id));
+            listGroup.appendChild(li);
+        });
+        modalClientList.appendChild(listGroup);
+    }
+
+    function seleccionarCliente(clienteId) {
+        clienteSeleccionadoId = clienteId;
+        if (clienteId === 'final') {
+            customerSelectorBtn.innerHTML = `<span><i class="bi bi-person-circle me-2"></i>Cliente Final</span>`;
+        } else {
+            const cliente = clientes.find(c => c.id === clienteId);
+            if (cliente) {
+                customerSelectorBtn.innerHTML = `<span><i class="bi bi-person-fill me-2"></i>${cliente.nombre}</span>`;
+            }
+        }
+        customerModal.hide();
+        console.log(`Cliente seleccionado para la orden: ${clienteSeleccionadoId}`);
+    }
+
+    // --- OTRAS FUNCIONES ---
+    function renderizarProductos(listaDeProductos) {
+        productArea.innerHTML = '';
+        if (!listaDeProductos) return; // Guarda de seguridad
+        listaDeProductos.forEach(producto => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.productoId = producto.id;
+            card.innerHTML = `
+                <div class="quantity-badge">0</div>
+                <div class="product-icon-placeholder"><i class="bi bi-image"></i></div>
+                <div class="card-body">
+                    <h5 class="card-title">${producto.nombre}</h5>
+                    <p class="card-text">${formatearMoneda(producto.precio)}</p>
+                </div>
+            `;
+            card.addEventListener('click', () => agregarAlCarrito(producto.id));
+            productArea.appendChild(card);
+        });
+    }
+    // ... (el resto de funciones no cambia)
+    function agregarAlCarrito(productoId) { deseleccionarItemCarrito(); const itemEnCarrito = carrito.find(item => item.id === productoId); if (itemEnCarrito) { itemEnCarrito.cantidad++; } else { const productoAAgregar = productos.find(p => p.id === productoId); if (productoAAgregar) { carrito.push({ ...productoAAgregar, cantidad: 1 }); } } actualizarUICompleta(); }
+    function seleccionarItemCarrito(productoId) { itemSeleccionadoId = productoId; bufferTeclado = ''; actualizarUICompleta(); }
+    function deseleccionarItemCarrito() { itemSeleccionadoId = null; const itemActivo = cartArea.querySelector('.cart-item-selected'); if (itemActivo) { itemActivo.classList.remove('cart-item-selected'); } }
+    function cambiarModoTeclado(nuevoModo) { modoTeclado = nuevoModo; bufferTeclado = ''; actualizarEstadoBotonesModo(); }
+    function procesarEntradaTeclado(valor) { if (itemSeleccionadoId === null) return; if (valor === 'borrar') { bufferTeclado = bufferTeclado.slice(0, -1); } else { if (valor === '.' && bufferTeclado.includes('.')) return; bufferTeclado += valor; } aplicarValorDelTeclado(); }
+    function aplicarValorDelTeclado() { const item = carrito.find(i => i.id === itemSeleccionadoId); if (!item) return; const valorNumerico = parseFloat(bufferTeclado); if (bufferTeclado === '') { if (modoTeclado === 'cantidad') item.cantidad = 1; else if (modoTeclado === 'precio') item.precio = 0; } else if (!isNaN(valorNumerico)) { if (modoTeclado === 'cantidad') { item.cantidad = valorNumerico > 0 ? valorNumerico : 1; } else if (modoTeclado === 'precio') { item.precio = valorNumerico >= 0 ? valorNumerico : 0; } } actualizarUICompleta(); }
+    function actualizarUICompleta() { actualizarVistaCarrito(); actualizarContadoresProductos(); actualizarEstadoBotonesModo(); }
+    function actualizarVistaCarrito() { cartArea.innerHTML = ''; let total = 0; if (carrito.length === 0) { cartArea.innerHTML = '<p class="text-muted text-center">El carrito está vacío.</p>'; totalPriceEl.textContent = formatearMoneda(0); return; } const listGroup = document.createElement('ul'); listGroup.className = 'list-group list-group-flush'; carrito.forEach(item => { const li = document.createElement('li'); li.className = 'list-group-item d-flex justify-content-between align-items-center'; if (item.id === itemSeleccionadoId) { li.classList.add('cart-item-selected'); } li.dataset.productoId = item.id; li.innerHTML = `<div class="w-50"><h6 class="my-0 text-truncate">${item.nombre}</h6><small class="text-muted">${formatearMoneda(item.precio)} c/u</small></div><div class="text-center">x ${item.cantidad}</div><span class="fw-bold text-end w-25">${formatearMoneda(item.precio * item.cantidad)}</span>`; li.addEventListener('click', (e) => { e.stopPropagation(); seleccionarItemCarrito(item.id); }); listGroup.appendChild(li); total += item.precio * item.cantidad; }); cartArea.appendChild(listGroup); totalPriceEl.textContent = formatearMoneda(total); }
+    function actualizarContadoresProductos() { const todosLosContadores = document.querySelectorAll('#product-area .quantity-badge'); todosLosContadores.forEach(badge => { badge.textContent = '0'; badge.classList.remove('visible'); }); carrito.forEach(item => { const card = document.querySelector(`#product-area .card[data-producto-id='${item.id}']`); if (card) { const badge = card.querySelector('.quantity-badge'); badge.textContent = item.cantidad; badge.classList.add('visible'); } }); }
+    function actualizarEstadoBotonesModo() { btnCantidad.classList.toggle('keypad-btn-active', modoTeclado === 'cantidad'); btnPrecio.classList.toggle('keypad-btn-active', modoTeclado === 'precio'); }
+    function formatearMoneda(valor) { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(valor); }
+    
+    // --- INICIALIZACIÓN Y ASIGNACIÓN DE EVENTOS ---
+    function inicializar() {
+        clientes = [ { id: 1, nombre: 'César Arango', tipo: 'Persona', correo: 'carango@jungleone.co', telefono: '310 123 4567' }, { id: 2, nombre: 'Carolina Garcés', tipo: 'Persona', correo: 'cgarces@example.co', telefono: '311 123 4567' }, { id: 3, nombre: 'TecnoQuímicas S.A.', tipo: 'Compañía', correo: 'compras@tq.com.co', telefono: '(602) 444 5566' } ];
+        productos = [ { id: 1, nombre: 'Consultas Medicas', precio: 70.00 }, { id: 10, nombre: 'Retiro De Puntos', precio: 100.00 }, { id: 100, nombre: 'Dolo Neurobion', precio: 320.00 }, { id: 11, nombre: 'Lavado Nasal', precio: 70.00 }, { id: 12, nombre: 'Inyeccion', precio: 70.00 }, { id: 13, nombre: 'Toma De Muestra', precio: 70.00 }, { id: 14, nombre: 'Consulta Medica Virtual', precio: 70.00 }, { id: 15, nombre: 'Consulta Medica Presencial', precio: 70.00 }];
+        
+        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
+        renderizarProductos(productos);
+        
+        renderizarClientes();
+        actualizarUICompleta();
+    }
+
+    // --- NUEVO: Event Listener para el botón Iniciar/Parar Escaneo ---
+if (scanToggleButton) {
+    scanToggleButton.addEventListener('click', () => {
+        scanningActive = !scanningActive; // Invierte el estado
+
+        if (scanningActive) {
+            scanToggleButtonText.textContent = 'Parar';
+            scanToggleButton.classList.remove('btn-outline-success');
+            scanToggleButton.classList.add('btn-danger');
+
+            // --- LÓGICA AÑADIDA ---
+            renderizarProductos([]); // Pasa un array vacío para limpiar el área de productos
+            // No es necesario actualizar contadores aquí ya que no hay productos visibles.
+
+            console.log('Modo escaneo: ACTIVADO - Área de productos limpia.');
+            // Futuro: Aquí podrías enfocar un campo de texto para el escáner si lo tuvieras.
+        } else {
+            scanToggleButtonText.textContent = 'Iniciar';
+            scanToggleButton.classList.remove('btn-danger');
+            scanToggleButton.classList.add('btn-outline-success');
+
+            // --- LÓGICA AÑADIDA ---
+            renderizarProductos(productos); // Vuelve a cargar todos los productos del arreglo global
+            actualizarContadoresProductos(); // Actualiza los contadores en las tarjetas restauradas
+
+            console.log('Modo escaneo: DESACTIVADO - Área de productos restaurada.');
+        }
+    });
+}
+
+if (btnFinalizarPago) {
+    btnFinalizarPago.addEventListener('click', () => {
+        // OPCIONAL: Antes de redirigir, puedes guardar la información del carrito
+        // y el cliente seleccionado en localStorage o sessionStorage para que 
+        // la página payment.html pueda recuperarla.
+        // Ejemplo guardando el carrito y el total:
+        const datosOrden = {
+            items: carrito, // Asumiendo que 'carrito' es tu array de ítems del carrito
+            total: parseFloat(totalPriceEl.textContent.replace(/[$.]/g, '').replace(',', '.')), // Obtener el total numérico
+            clienteId: clienteSeleccionadoId // Asumiendo que tienes esta variable
+        };
+        localStorage.setItem('ordenParaPago', JSON.stringify(datosOrden));
+
+        // Redirigir a la página de pago
+        window.location.href = 'payment.html';
+    });
+}
+
+    // ... (el resto de los event listeners no cambia)
+    const searchInput = document.getElementById('product-search-input');
+    if (searchInput) { searchInput.addEventListener('input', (e) => { const terminoDeBusqueda = e.target.value.toLowerCase().trim(); const productosFiltrados = productos.filter(producto => producto.nombre.toLowerCase().includes(terminoDeBusqueda)); renderizarProductos(productosFiltrados); actualizarContadoresProductos(); }); }
+    keypadContainer.addEventListener('click', (e) => { const target = e.target.closest('.keypad-btn'); if (!target) return; if (target.id === 'btn-cantidad') { cambiarModoTeclado('cantidad'); } else if (target.id === 'btn-precio') { cambiarModoTeclado('precio'); } else { let valor = target.textContent.trim(); if (target.querySelector('.bi-backspace-fill')) { valor = 'borrar'; } if(target.disabled) return; procesarEntradaTeclado(valor); } });
+    document.addEventListener('click', (e) => { const rightColumn = document.getElementById('right-column'); if (rightColumn && !rightColumn.contains(e.target)) { deseleccionarItemCarrito(); }});
+
+    inicializar();
+});
+</file>
+
+</files>
